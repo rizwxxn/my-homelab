@@ -1,0 +1,58 @@
+name: jellyfin
+services:
+    jellyfin:
+        container_name: jellyfin
+        environment:
+            - PUID=1000
+            - PGID=1000
+            - TZ=Asia/Kolkata
+        ports:
+            - 8096:8096
+            - 8920:8920
+        volumes:
+            - /home/rizwxn/docker/jelly:/config
+            - /home/rizwxn/docker/jelly/cache:/cache
+            - /home/rizwxn:/rizwxn
+            - /media:/HDD
+        devices:
+            - /dev/dri/renderD128:/dev/dri/renderD128
+        restart: unless-stopped
+        image: jellyfin/jellyfin:latest
+        deploy:
+           resources:
+            limits:
+              cpus: '1.6'  # Limit to 65% of a single CPU         
+        
+
+    transmission:
+        container_name: transmission
+        environment:
+            - PUID=1000
+            - PGID=1000
+            - TZ=Asia/kolkata
+            - USER=rizwxn
+            - PASS=696969
+        ports:
+            - 2024:9091
+            - 2025:51413
+            - 2015:51413/udp
+        volumes:
+            - /home/rizwxn/docker/transmission:/config
+            - /media/2/media/movies:/downloads
+            - /media/2/media/series:/ser
+            - /media/2/media/local-movies:/oth
+            - /media/2/media/anime:/ani
+            - /media/2/media/songs:/song
+            - /media/2/games:/pc
+        restart: unless-stopped
+        image: lscr.io/linuxserver/transmission:latest
+        
+    swingmusic:
+         image: ghcr.io/swingmx/swingmusic:latest
+         container_name: swingmusic
+         volumes:
+           - /media/2/media/songs:/music
+           - /home/rizwxn/docker/swingmx:/config
+         ports:
+           - "1970:1970"
+         restart: unless-stopped
