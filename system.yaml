@@ -1,0 +1,104 @@
+version: '3.5'
+services:
+  dash:
+    container_name: dashdot
+    image: mauricenino/dashdot:latest
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - '2007:3001'
+    volumes:
+      - /:/mnt/host:ro
+    environment:
+        DASHDOT_ENABLE_CPU_TEMPS: 'true'
+        DASHDOT_ALWAYS_SHOW_PERCENTAGES: 'true'
+        DASHDOT_WIDGET_LIST: 'os,cpu,storage,ram,network' 
+        DASHDOT_OVERRIDE_RAM_BRAND: 'Samsung'
+        DASHDOT_OVERRIDE_RAM_SIZE: '17179869184'
+        DASHDOT_OVERRIDE_RAM_FREQUENCY: '1600'
+        DASHDOT_SHOW_HOST: 'true' 
+        
+  glances:
+    restart: always
+    container_name: htop
+    ports:
+        - 2014-2015:61208-61209
+    environment:
+        - GLANCES_OPT=-w
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+        # - /run/user/1000/podman/podman.sock:/run/user/1000/podman/podman.sock:ro
+    pid: host
+    hostname: "rizwxn's server"
+    image: nicolargo/glances:latest
+    
+  speedtest-tracker:
+    container_name: speedtest
+    image: lscr.io/linuxserver/speedtest-tracker:0.20.6
+    ports:
+      - 3380:80   # HTTP
+      - 3343:443  # HTTPS
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - APP_KEY=base64:q/vmL1NIrZER5Z1FbiU7rjUmBjXs8o17606MTl87RpA=
+      - APP_URL=http://localhost
+      - DB_CONNECTION=sqlite
+      - SPEEDTEST_SCHEDULE=0 */1 * * *
+      - TZ=Asia/Kolkata
+    volumes:
+      - /home/rizwxn/docker/speedtest:/config
+      # - /path/to-custom-ssl-keys:/home/rizwxn/docker/speedtest-new/ssl
+    restart: unless-stopped
+    # cpu_shares: 300   # Limit to 70% CPU usage
+    
+  beszel:
+    image: 'henrygd/beszel'
+    container_name: 'beszel'
+    restart: unless-stopped
+    ports:
+      - '8090:8090'
+    volumes:
+      - /home/rizwxn/docker/beszel:/beszel_data
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  beszel-agent:
+    image: "henrygd/beszel-agent"
+    container_name: "beszel-agent"
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # monitor other disks / partitions by mounting a folder in /extra-filesystems
+      # - /home/rizwxn:/extra-filesystems/disk1:ro
+      - /media/1:/extra-filesystems/disk1:ro
+      - /media/2:/extra-filesystems/disk2:ro      
+    environment:
+      PORT: 45876
+      KEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ3JDpznEjR5dtuvAhiP27bLxZeRUPyYbsR5J7skytnu"
+      # FILESYSTEM: /dev/sda1 # override the root partition / device for disk I/O stats
+      #EXTRA_FILESYSTEMS: "sdb1"
+      
+  heimdall:
+    container_name: homepage
+    environment:
+       - PUID=1000
+       - PGID=1000
+       - TZ=Asia/Kolkata
+    ports:
+      - 2009:80
+            # - 2012:443
+    volumes:
+      - /home/rizwxn/docker/heimdall:/config
+    restart: unless-stopped
+    image: linuxserver/heimdall:latest   
+    
+  watchtower:
+      container_name: watchtower
+      volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+      environment:
+          # - WATCHTOWER_CLEANUP=true
+          - WATCHTOWER_POLL_INTERVAL=3600
+      image: containrrr/watchtower    
